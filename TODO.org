@@ -1,0 +1,14 @@
+* To Implement
+- see https://www.last.fm/api/
+- add tools to mdickens.me
+-
+** Forgotten songs
+- "forgotten songs": songs you used to listen to but haven't listened to in a while
+  - use https://www.last.fm/api/show/user.getWeeklyTrackChart
+- Bonus feature: integrate with Spotify to play a random forgotten song
+*** Possible algorithms
+- (number of listens) * (time since last listen)
+- sum[(time since listen) for all listens]
+- sum[(time since listen)**2 for all listens]
+** Random song chooser
+- Given a genre, pick a random song of that genre to listen to
