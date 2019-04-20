@@ -1,0 +1,16 @@
+weeklytrackchart:
+  \@attr:
+    user: str
+    from: int date
+    to: int date
+  track:
+    - \@attr:
+        rank: int 1 to n
+      artist:
+        mbid: '[a-z0-9\-]+'
+        \#text: str
+      mbid: '[a-z0-9\-]+'
+      url: str
+      image: whocares
+      name: str
+      playcount: int
