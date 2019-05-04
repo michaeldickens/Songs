@@ -17,7 +17,7 @@ weeklytrackchart:
 
 
 track_info:
-  <mbid>:
+  <track_id>:
     name: str
     mbid: str
     url: str

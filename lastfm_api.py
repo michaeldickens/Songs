@@ -53,13 +53,13 @@ class API:
             }
         )
 
-    def get_track_info(self, name, artist) -> requests.Response:
+    def get_track_info(self, mbid=None, artist=None, name=None) -> requests.Response:
         # note: the API lets you search by mbid, but it returns "Track not found" for some reason
-        return self.send_GET(
-            'track.getinfo',
-            {
-                'track': name,
-                'artist': artist,
-                'username': self.username,
-            }
-        )
+        body = {'username': self.username}
+        if mbid:
+            body['mbid'] = mbid
+        if artist:
+            body['artist'] = artist
+        if name:
+            body['track'] = name
+        return self.send_GET('track.getinfo', body)

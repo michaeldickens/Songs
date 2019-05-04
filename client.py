@@ -9,7 +9,7 @@ Created: 2019-04-20
 '''
 
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Any, Callable, Dict, List, Tuple
 
 from controller import Controller
 
@@ -17,57 +17,94 @@ from controller import Controller
 def track_playcounts(controller):
     playcount = {}
     for track in controller.weekly_tracks():
-        mbid = track['mbid']
-        playcount[mbid] = playcount.get(mbid, 0) + int(track['playcount'])
+        track_id = controller.get_track_id(track)
+        playcount[track_id] = playcount.get(track_id, 0) + int(track['playcount'])
 
     return playcount
 
 
 def longest_listened_songs(controller, print_result=True) -> Dict[str, int]:
+    """
+    Rank songs by how long the user has spent listening to them. Note that this
+    can be unreliable in some cases when last.fm incorrectly reports the song
+    duration as 0.
+    """
     playcount = track_playcounts(controller)
 
     time_listened = {
-        mbid: int(controller.track_info[mbid]['duration']) * playcount[mbid]
-        for mbid in (playcount.keys() & controller.track_info.keys())
+        track_id: int(controller.track_info[track_id]['duration']) * playcount[track_id]
+        for track_id in (playcount.keys() & controller.track_info.keys())
     }
 
     top_songs = sorted(time_listened.items(), key=lambda pair: -pair[1])
 
     if print_result:
-        for (rank, (mbid, time)) in enumerate(top_songs[:50]):
+        for (rank, (track_id, time)) in enumerate(top_songs[:25]):
             print("{:>2}. {:<25} – {:<35} [{:>2} plays, {:>3}:{:02}]".format(
                 rank+1,
-                controller.get_artist(mbid),
-                controller.get_track_name(mbid),
-                playcount[mbid],
+                controller.get_artist(track_id),
+                controller.get_track_name(track_id),
+                playcount[track_id],
                 int((time/1000)/60), int((time/1000) % 60)
             ))
 
     return time_listened
 
 
-def longest_listened_artists(controller, print_result=True) -> Dict[str, int]:
+def _longest_listened(controller, key_fn: Callable[[str], Any]) -> Tuple[Dict[str, int], Dict[str, int], List[Tuple[str, int]]]:
     track_playcount = track_playcounts(controller)
     top_songs = longest_listened_songs(controller, print_result=False)
     time_listened = {}
 
-    for mbid in top_songs:
-        artist = controller.get_artist(mbid)
-        time_listened[artist] = time_listened.get(artist, 0) + top_songs[mbid]
+    for track_id in top_songs:
+        key = key_fn(track_id)
+        if key is not None:
+            time_listened[key] = time_listened.get(key, 0) + top_songs[track_id]
 
-    top_artists = sorted(time_listened.items(), key=lambda pair: -pair[1])
+    top_keys = sorted(time_listened.items(), key=lambda pair: -pair[1])
 
-    artist_playcount = {}
-    for mbid in track_playcount:
-        artist = controller.get_artist(mbid)
-        artist_playcount[artist] = artist_playcount.get(artist, 0) + track_playcount[mbid]
+    key_playcount = {}
+    for track_id in track_playcount:
+        key = key_fn(track_id)
+        key_playcount[key] = key_playcount.get(key, 0) + track_playcount[track_id]
+
+    return (key_playcount, time_listened, top_keys)
+
+
+def longest_listened_artists(controller, print_result=True) -> Dict[str, int]:
+    playcount, time_listened, top_keys = _longest_listened(
+        controller, lambda track_id: controller.get_artist(track_id), print_result=print_result)
 
     if print_result:
-        for (rank, (artist, time)) in enumerate(top_artists[:25]):
+        for (rank, (artist, time)) in enumerate(top_keys[:25]):
             print("{:>2}. {:<25} [{:>4} plays, {:>4}:{:02}]".format(
                 rank+1,
                 artist,
-                artist_playcount[artist],
+                playcount[artist],
+                int((time/1000)/60), int((time/1000) % 60)
+            ))
+
+    return time_listened
+
+
+def longest_listened_albums(controller, print_result=True) -> Dict[str, int]:
+    def get_album(track_id):
+        if controller.track_info.get(track_id, {}).get('album', {}).get('title') is None:
+            return None
+        return "{}—{}".format(
+            controller.get_artist(track_id),
+            controller.track_info[track_id]['album']['title'])
+
+    playcount, time_listened, top_keys = _longest_listened(controller, get_album)
+
+    if print_result:
+        for (rank, (key, time)) in enumerate(top_keys[:25]):
+            artist, album = key.split('—')
+            print("{:>2}. {:<25} – {:<35} [{:>4} plays, {:>4}:{:02}]".format(
+                rank+1,
+                artist,
+                album,
+                playcount[key],
                 int((time/1000)/60), int((time/1000) % 60)
             ))
 
@@ -124,5 +161,4 @@ def forgotten_scores_v2(controller):
 
 
 controller = Controller()
-top_songs = longest_listened_songs(controller)
-import ipdb; ipdb.set_trace()
+longest_listened_songs(controller)

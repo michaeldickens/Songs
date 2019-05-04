@@ -17,61 +17,60 @@ import json
 from lastfm_api import API
 
 class Controller:
+    @staticmethod
+    def get_artist(track_id: str) -> str:
+        return track_id.split('—')[0]  # em-dash
+
+    @staticmethod
+    def get_track_name(track_id: str) -> str:
+        return track_id.split('—')[1]  # em-dash
+
+    @staticmethod
+    def get_track_id(track: dict) -> (str, str):
+        # em-dash, should really be en-dash but I screwed it up and now it's in track_info.json
+        return '{}—{}'.format(track['artist']['#text'], track['name'])
+
+    @staticmethod
+    def load_json(filename: str) -> dict:
+        with open('db/{}'.format(filename), 'r') as f:
+            json_str = f.read()
+            return json.loads(json_str)
+
+    @staticmethod
+    def save_json(filename: str, blob: dict) -> None:
+        with open('db/{}'.format(filename), 'w') as f:
+            data_dump = json.dumps(blob)
+            f.write(data_dump)
+
     def __init__(self):
         self.api = API('MTGandP')
 
-        with open('db/weekly_charts.json', 'r') as f:
-            json_str = f.read()
-            self.weekly_charts = json.loads(json_str)
+        self.weekly_charts = self.load_json('weekly_charts.json')
+        self.track_info = self.load_json('track_info.json')
 
-        self._basic_track_info = {}
-        for week in self.weekly_charts:
-            for track in week['track']:
-                mbid = track['mbid']
-                if mbid not in self._basic_track_info:
-                    self._basic_track_info[mbid] = {
-                        'artist': track['artist']['#text'],
-                        'name': track['name'],
-                    }
+        self._all_tracks = {}
+        for track in self.weekly_tracks():
+            # note: this gets overwritten if a track occurs in multiple weeks,
+            # so it won't have accurate playcounts
+            self._all_tracks[self.get_track_id(track)] = track
 
 
-        with open('db/track_info.json', 'r') as f:
-            json_str = f.read()
-            self.track_info = json.loads(json_str)
-
-    def basic_track_info(self, mbid: str) -> Dict[str, str]:
-        return self._basic_track_info[mbid]
-
-    def get_artist(self, mbid: str) -> str:
-        return self._basic_track_info[mbid]['artist']
-
-    def get_track_name(self, mbid: str) -> str:
-        return self._basic_track_info[mbid]['name']
-
-    def track_id(self, track: dict) -> (str, str):
-        return (track['artist']['#text'], track['name'])
-
-    @staticmethod
-    def delete_extraneous_data(weekly_charts: dict) -> None:
+    def delete_extraneous_data(self, weekly_charts: dict) -> None:
         for track in weekly_charts['track']:
             if 'image' in track:
                 del track['image']
 
-    @staticmethod
-    def save_all_track_charts() -> None:
-        api = API('MTGandP')
-        date_ranges = api.get_list_of_date_ranges()
+    def save_all_track_charts(self) -> None:
+        date_ranges = self.api.get_list_of_date_ranges()
         date_ranges = date_ranges[-(52+52+26):]
         track_charts = []
         for (from_date, to_date) in date_ranges:
-            response = api.get_weekly_track_chart(from_date, to_date)
+            response = self.api.get_weekly_track_chart(from_date, to_date)
             data = response.json()['weeklytrackchart']
             delete_extraneous_data(data)
             track_charts.append(data)
 
-        with open('db/weekly_charts.json', 'w') as f:
-            data_dump = json.dumps(track_charts)
-            f.write(data_dump)
+        self.save_json('weekly_charts.json', track_charts)
 
     @staticmethod
     def save_weekly_track_chart() -> None:
@@ -80,18 +79,25 @@ class Controller:
 
     def save_all_track_info(self) -> None:
         # Note: this does not update tracks that are already in the table, so play counts will become out of date.
-        count = 0
-        for mbid in self._basic_track_info:
-            if mbid not in self.track_info:
-                print("on number {}\r".format(count))
-                count += 1
+        for (count, track_id) in enumerate(self._all_tracks.keys()):
+            if track_id not in self.track_info:
                 response = self.api.get_track_info(
-                    name=self._basic_track_info[mbid]['name'], artist=self._basic_track_info[mbid]['artist'])
-                self.track_info[mbid] = response.json()['track']
+                    name=self.get_track_name(track_id),
+                    artist=self.get_artist(track_id))
+                if 'error' in response.json():
+                    track = self._all_tracks[track_id]
+                    mbid = track['mbid']
+                    response = self.api.get_track_info(mbid=mbid)
+                    if 'error' in response.json():
+                        print('{} [mbid \'{}\']: {}'.format(track_id, mbid, response.json()['message']))
+                else:
+                    self.track_info[track_id] = response.json()['track']
 
-        with open('db/track_info.json', 'w') as f:
-            data_dump = json.dumps(self.track_info)
-            f.write(data_dump)
+            if count % 100 == 0:
+                print('saving at number {}'.format(count))
+                self.save_json('track_info.json', self.track_info)
+
+        self.save_json('track_info.json', self.track_info)
 
     def weekly_tracks(self):
         for week in self.weekly_charts:
