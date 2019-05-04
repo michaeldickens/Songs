@@ -1,14 +1,24 @@
 * To Implement
 - see https://www.last.fm/api/
 - add tools to mdickens.me
--
-** Forgotten songs
+** DONE Forgotten songs
 - "forgotten songs": songs you used to listen to but haven't listened to in a while
   - use https://www.last.fm/api/show/user.getWeeklyTrackChart
 - Bonus feature: integrate with Spotify to play a random forgotten song
 *** Possible algorithms
 - (number of listens) * (time since last listen)
 - sum[(time since listen) for all listens]
+  - doesn't work, it just gives songs with lots of listens
 - sum[(time since listen)**2 for all listens]
-** Random song chooser
+  - slightly better than above, but same problem
+  - if you use a bigger exponent like 8, it still shows songs with tons of listens, but they tend to be ones that I used to listen to more. Not exactly "forgotten", but similar
+*** Results
+- You need to weight last-played much more heavily than play count, otherwise it will just show you songs with lots of plays
+- Sadly, it looks like my last.fm data just isn't old enough to be able to produce a good list of forgotten songs
+** TODO Random song chooser
 - Given a genre, pick a random song of that genre to listen to
+- Can't tell how to actually get genre info out of last.fm API
+** TODO Most-listened songs/albums/artists by play time
+** TODO Pull recent charts to keep db up to date
+** Add iTunes listens to last.fm
+- Can use https://www.last.fm/api/show/track.scrobble to record scrobbles that happened outside of Spotify

@@ -14,3 +14,27 @@ weeklytrackchart:
       image: whocares
       name: str
       playcount: int
+
+
+track_info:
+  <mbid>:
+    name: str
+    mbid: str
+    url: str
+    duration: int (milliseconds)
+    artist:
+      name: str
+      mbid: str
+      url: str
+    album:
+      artist: str
+      title: str
+      mbid: str
+      url: str
+      \@attr:
+        position: int
+    userplaycount: int
+    toptags:
+      tag:
+        - name: str
+          url: str

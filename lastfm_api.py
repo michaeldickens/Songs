@@ -52,3 +52,14 @@ class API:
                 'to': to_date,
             }
         )
+
+    def get_track_info(self, name, artist) -> requests.Response:
+        # note: the API lets you search by mbid, but it returns "Track not found" for some reason
+        return self.send_GET(
+            'track.getinfo',
+            {
+                'track': name,
+                'artist': artist,
+                'username': self.username,
+            }
+        )
