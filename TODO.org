@@ -1,7 +1,7 @@
 * To Implement
 - see https://www.last.fm/api/
 - add tools to mdickens.me
-** DONE Forgotten songs
+** TODO Forgotten songs
 - "forgotten songs": songs you used to listen to but haven't listened to in a while
   - use https://www.last.fm/api/show/user.getWeeklyTrackChart
 - Bonus feature: integrate with Spotify to play a random forgotten song
@@ -15,10 +15,23 @@
 *** Results
 - You need to weight last-played much more heavily than play count, otherwise it will just show you songs with lots of plays
 - Sadly, it looks like my last.fm data just isn't old enough to be able to produce a good list of forgotten songs
+*** TODO forgotten song examples
+convert these into a better algorithm
+
+- on 2020-01-08, listened to Furfur for the first time since 2019-07-31. it had 55 total listens
+  - only three total scrobbles in 2019
+** DONE Most-listened songs/albums/artists by play time
+** TODO radio where you can dynamically vary song similarity
+https://developer.spotify.com/documentation/web-api/reference/browse/get-recommendations/
+https://www.last.fm/api/show/track.getSimilar
+https://notes.variogr.am/2012/12/11/how-music-recommendation-works-and-doesnt-work/
 ** TODO Random song chooser
 - Given a genre, pick a random song of that genre to listen to
 - Can't tell how to actually get genre info out of last.fm API
-** TODO Most-listened songs/albums/artists by play time
 ** TODO Pull recent charts to keep db up to date
+** TODO Spotify API
+- Track features: https://developer.spotify.com/documentation/web-api/reference/tracks/get-audio-features/
+- Top artists/tracks: https://developer.spotify.com/documentation/web-api/reference/personalization/get-users-top-artists-and-tracks/
+  - can give top 50 artists/tracks, probably over a longer time period than last.fm (says it goes back "several years")
 ** Add iTunes listens to last.fm
 - Can use https://www.last.fm/api/show/track.scrobble to record scrobbles that happened outside of Spotify

@@ -67,7 +67,7 @@ class Controller:
         for (from_date, to_date) in date_ranges:
             response = self.api.get_weekly_track_chart(from_date, to_date)
             data = response.json()['weeklytrackchart']
-            delete_extraneous_data(data)
+            self.delete_extraneous_data(data)
             track_charts.append(data)
 
         self.save_json('weekly_charts.json', track_charts)
