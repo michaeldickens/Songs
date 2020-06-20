@@ -14,7 +14,7 @@ from typing import Dict
 
 import json
 
-from lastfm_api import API
+from lastfm_api import API, TrackNotFound
 
 class Controller:
     @staticmethod
@@ -81,17 +81,15 @@ class Controller:
         # Note: this does not update tracks that are already in the table, so play counts will become out of date.
         for (count, track_id) in enumerate(self._all_tracks.keys()):
             if track_id not in self.track_info:
-                response = self.api.get_track_info(
-                    name=self.get_track_name(track_id),
-                    artist=self.get_artist(track_id))
-                if 'error' in response.json():
-                    track = self._all_tracks[track_id]
-                    mbid = track['mbid']
-                    response = self.api.get_track_info(mbid=mbid)
-                    if 'error' in response.json():
-                        print('{} [mbid \'{}\']: {}'.format(track_id, mbid, response.json()['message']))
-                else:
+                # TODO(2020-06-20): I refactored this to move logic into api.py, haven't tested
+                mbid = self._all_tracks[track_id]['mbid']
+                artist = self.get_artist(track_id)
+                name = self.get_track_name(track_id)
+                try:
+                    response = self.get_track_info(mbid=mbid, artist=artist, name=name)
                     self.track_info[track_id] = response.json()['track']
+                except TrackNotFound as e:
+                    print("{} [mbid '{}']: {}".format(track_id, mbid, str(e)))
 
             if count % 100 == 0:
                 print('saving at number {}'.format(count))

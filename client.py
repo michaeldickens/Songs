@@ -11,6 +11,7 @@ Created: 2019-04-20
 from datetime import datetime, timedelta
 from typing import Any, Callable, Dict, List, Tuple
 
+from lastfm_api import TrackNotFound
 from controller import Controller
 
 
@@ -223,25 +224,7 @@ def forgotten_scores_v2(controller):
             playcount[mbid], last_play[mbid].strftime("%Y-%m-%d")))
 
 
-def daily_listening_time(controller):
-    from_time = datetime(2020, 6, 19)
-    to_time = from_time + timedelta(days=1)
-
-    response = controller.api.get_recent_tracks(from_time, to_time)
-    tracks = response.json()['recenttracks']['track']
-    listening_time = 0
-    print(tracks)
-    for track in tracks:
-        info_resp = controller.api.get_track_info(mbid=track['mbid'], artist=track['artist'], name=track['name'])
-        track_info = info_resp.json()['track']
-        listening_time += track_info['duration']
-
-    print("Total scrobbles: {}".format(len(tracks)))
-    print("Listening time: {}".format(listening_time))
-
-
 controller = Controller()
-daily_listening_time(controller)
-# playcount = track_playcounts(controller)
-# time_listened = longest_listened_songs(controller, print_result=False)
-# combined_ranking(playcount, time_listened)
+playcount = track_playcounts(controller)
+time_listened = longest_listened_songs(controller, print_result=False)
+combined_ranking(playcount, time_listened)

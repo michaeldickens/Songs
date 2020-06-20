@@ -16,6 +16,10 @@ from typing import List, Optional, Tuple
 import requests
 
 
+class TrackNotFound(Exception):
+    pass
+
+
 class API:
     def __init__(self, username):
         self.username = username
@@ -53,7 +57,7 @@ class API:
             }
         )
 
-    def get_track_info(self, mbid=None, artist=None, name=None) -> requests.Response:
+    def _get_track_info(self, mbid=None, artist=None, name=None) -> requests.Response:
         # note: the API lets you search by mbid, but it returns "Track not found" for some reason
         body = {'username': self.username}
         if mbid:
@@ -63,3 +67,12 @@ class API:
         if name:
             body['track'] = name
         return self.send_GET('track.getinfo', body)
+
+    def get_track_info(self, mbid=None, artist=None, name=None) -> requests.Response:
+        response = self._get_track_info(artist=artist, name=name)
+        if 'error' in response.json():
+            response = self._get_track_info(mbid=mbid)
+            if 'error' in response.json():
+                raise TrackNotFound(response.json()['message'])
+
+        return response
