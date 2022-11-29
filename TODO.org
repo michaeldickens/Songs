@@ -20,6 +20,13 @@ convert these into a better algorithm
 
 - on 2020-01-08, listened to Furfur for the first time since 2019-07-31. it had 55 total listens
   - only three total scrobbles in 2019
+- on 2020-06-29, listened to Dark Moor – Somewhere in Dreams, which had 0 recorded listens on last.fm
+- As of 2020-07-31, Carass – Black Star hasn't had a listen since 2019-04-19 (it got removed from Spotify). but got added back in 2020-08
+*** TODO new algorithm to try
+[2020-06-29]
+
+Find songs with a long time since last listen that got some minimum number of listens. Maybe sqrt(num listens) * (time since last listen), or just (time since last listen) | (numlistens) >= 5
+*** TODO try forgotten artists instead of forgotten songs
 ** DONE Most-listened songs/albums/artists by play time
 ** TODO radio where you can dynamically vary song similarity
 https://developer.spotify.com/documentation/web-api/reference/browse/get-recommendations/

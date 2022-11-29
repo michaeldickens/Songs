@@ -225,6 +225,7 @@ def forgotten_scores_v2(controller):
 
 
 controller = Controller()
-playcount = track_playcounts(controller)
-time_listened = longest_listened_songs(controller, print_result=False)
-combined_ranking(playcount, time_listened)
+# playcount = track_playcounts(controller)
+# time_listened = longest_listened_songs(controller, print_result=False)
+# combined_ranking(playcount, time_listened)
+forgotten_scores_v1(controller)

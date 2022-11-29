@@ -62,7 +62,7 @@ class Controller:
 
     def save_all_track_charts(self) -> None:
         date_ranges = self.api.get_list_of_date_ranges()
-        date_ranges = date_ranges[-(52+52+26):]
+        # date_ranges = date_ranges[-(52+52+26):]
         track_charts = []
         for (from_date, to_date) in date_ranges:
             response = self.api.get_weekly_track_chart(from_date, to_date)
