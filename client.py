@@ -182,50 +182,75 @@ def forgotten_scores_v1(controller):
     for week in controller.weekly_charts:
         date = datetime.fromtimestamp(int(week['@attr']['from']))
         for track in week['track']:
-            mbid = track['mbid']
-            playcount[mbid] = playcount.get(mbid, 0) + int(track['playcount'])
-            time_since_plays[mbid] = time_since_plays.get(mbid, 0) + (today - date).days
+            track_id = controller.get_track_id(track)
+            playcount[track_id] = playcount.get(track_id, 0) + int(track['playcount'])
+            time_since_plays[track_id] = time_since_plays.get(track_id, 0) + (today - date).days
 
     track_scores = {}
-    for mbid in time_since_plays:
-        track_scores[mbid] = time_since_plays[mbid]**2 / playcount[mbid]**(1/2.0)
+    for track_id in time_since_plays:
+        track_scores[track_id] = time_since_plays[track_id]**2 / playcount[track_id]**(1/2.0)
 
     ranked = sorted(track_scores.items(), key=lambda pair: -pair[1])
 
-    for (mbid, score) in ranked[:20]:
-        basic_track_info = controller.basic_track_info(mbid)
+    for (track_id, score) in ranked[:20]:
         print("{:>4}: {:<25} – {:<35} ({:>2} plays)".format(
-            int(score), basic_track_info['artist'], basic_track_info['name'],
-            playcount[mbid]))
+            int(score), controller.get_artist(track_id), controller.get_track_name(track_id),
+            playcount[track_id]))
 
 
 def forgotten_scores_v2(controller):
+    '''Weight by time since last listen multiplied by the Nth root of play count for some N.'''
     last_play = {}
     playcount = {}
     today = datetime.today()
     for week in controller.weekly_charts:
         date = datetime.fromtimestamp(int(week['@attr']['from']))
         for track in week['track']:
-            mbid = track['mbid']
-            last_play[mbid] = date
-            playcount[mbid] = playcount.get(mbid, 0) + int(track['playcount'])
+            track_id = controller.get_track_id(track)
+            last_play[track_id] = date
+            playcount[track_id] = playcount.get(track_id, 0) + int(track['playcount'])
 
     track_scores = {}
-    for mbid in last_play:
-        last_play_delta = (today - last_play[mbid]).days
-        track_scores[mbid] = last_play_delta * playcount[mbid]**(1/8.0)
+    for track_id in last_play:
+        last_play_delta = (today - last_play[track_id]).days
+        track_scores[track_id] = last_play_delta * playcount[track_id]**(1/4.0)
 
     ranked = sorted(track_scores.items(), key=lambda pair: -pair[1])
 
-    for (mbid, score) in ranked[:20]:
-        basic_track_info = controller.basic_track_info(mbid)
+    for (track_id, score) in ranked[:20]:
         print("{:>4}: {:<25} – {:<35} ({:>2} plays, {} last play)".format(
-            int(score), basic_track_info['artist'], basic_track_info['name'],
-            playcount[mbid], last_play[mbid].strftime("%Y-%m-%d")))
+            int(score), controller.get_artist(track_id), controller.get_track_name(track_id),
+            playcount[track_id], last_play[track_id].strftime("%Y-%m-%d")))
+
+
+def forgotten_scores_v3(controller):
+    '''Apply exponential weighting to listens and find tracks where the
+    exponentially-weighted play count is small relative to unweighted play
+    count.'''
+    exp_wt_plays = {}
+    playcount = {}
+    today = datetime.today()
+    for i, week in enumerate(controller.weekly_charts):
+        date = datetime.fromtimestamp(int(week['@attr']['from']))
+        for track in week['track']:
+            track_id = controller.get_track_id(track)
+            exp_wt_plays[track_id] = exp_wt_plays.get(track_id, 0) + int(track['playcount']) * 2**(-(len(controller.weekly_charts) - i) / 52)
+            playcount[track_id] = playcount.get(track_id, 0) + int(track['playcount'])
+
+    track_scores = {}
+    for track_id in playcount:
+        track_scores[track_id] = -(exp_wt_plays[track_id] + 1) / (playcount[track_id] + 1)
+
+    ranked = sorted(track_scores.items(), key=lambda pair: -pair[1])
+
+    for (track_id, score) in ranked[:20]:
+        print("{:>4}: {:<25} – {:<35} ({:>2} plays, {:.1f} exp-weighted plays)".format(
+            int(score), controller.get_artist(track_id), controller.get_track_name(track_id),
+            playcount[track_id], exp_wt_plays[track_id]))
 
 
 controller = Controller()
 # playcount = track_playcounts(controller)
 # time_listened = longest_listened_songs(controller, print_result=False)
 # combined_ranking(playcount, time_listened)
-forgotten_scores_v1(controller)
+forgotten_scores_v3(controller)
